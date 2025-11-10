@@ -148,7 +148,7 @@ graph LR
 
 1. **APIの有効化**:
    * 課金が有効になっているGoogle Cloudプロジェクト。
-   * [gcloud CLI](https://cloud.google.com/sdk/install) )がインストールされ、認証されていること（`gcloud auth login`）。
+   * [gcloud CLI](https://cloud.google.com/sdk/install)がインストールされ、認証されていること（`gcloud auth login`）。
    * 以下のコマンドを実行して、必要なすべてのAPIを有効にします:
 
    ```
@@ -176,12 +176,22 @@ graph LR
 
 2. **サービスアカウントの作成と権限の付与**:
 * このサービスアカウント（SA）は、Cloud Runサービスが組織をスキャンし、タスクを作成するために使用されます。
+
+まず、Organization IDを環境変数として設定します。
+
 ```
-   # Set your Organization ID
    export ORG_ID="<your-org-id>"
+```
 
+Organization IDは以下のgcloud コマンドで確認できます。
+
+```
+gcloud organizations list
+```
+
+以下のコマンドを実行
+```
    
-
    # Set Project and SA variables
 
    export PROJECT_ID=$(gcloud config get-value project)
@@ -301,10 +311,16 @@ gcloud storage buckets add-iam-policy-binding gs://${BUCKET_NAME} --member="serv
      * `TASK_QUEUE`: `cloudgauge-scan-queue`  
      * `RESULTS_BUCKET`: ご自身のGCSバケット名 (例： `cloudgauge-reports-my-gcp-project`)  
      * `SERVICE_ACCOUNT_EMAIL`:サービスアカウントに紐づくemailアドレス
-     * `LOCATION`: ステップ9で選択したリージョン (e.g., `asia-south1`)  
+     * `LOCATION`: ステップ8で選択したリージョン (e.g., `asia-south1`)  
 10. **Create**をクリック　ー ビルドとデプロイプロセスが開始します。
 
----
+尚、サービスアカウントに紐づくemailアドレスは、以下のgcloud コマンドで確認できます。
+
+```
+gcloud iam service-accounts list --format="value(email)"
+```
+
+
 
 ### **ステップ 3: 必要なIAMロールを付与**
 サービスアカウントにはCloud Runサービスに対して以下の権限付与が必要です。これの権限付与により、全ての権限が厳密にスコープ化されます（セキュリティのベストプラクティスが遵守されます）。
@@ -315,14 +331,15 @@ gcloud storage buckets add-iam-policy-binding gs://${BUCKET_NAME} --member="serv
 
 上記２つのロールを**サービスレベル**で付与することで、サービスアカウントがアクセスする必要のある特定のリソースに対してのみ、**最小限の権限**を持つよう設定可能となります。
 
-**Cloud Shell**または`gcloud`がインストールされたローカルターミナルを開き、プレースホルダーをご実際の値に置き換えて以下のコマンドを実行。
+**Cloud Shell**または`gcloud`がインストールされたローカルターミナルを開き、環境変数を設定し
 
 ```
-# Store your service account email in a variable for convenience  
-SA_EMAIL="cloudgauge-sa@your-project-id.iam.gserviceaccount.com"
-SERVICE_NAME="your-chosen-service-name"
+export SA_EMAIL="cloudgauge-sa@your-project-id.iam.gserviceaccount.com"
+export SERVICE_NAME="your-chosen-service-name"
 export REGION="asia-south1" # Or your chosen region
-
+```
+以下のコマンドを実行してください
+```
 # Grants permission to be invoked by Cloud Tasks
 gcloud run services add-iam-policy-binding ${SERVICE_NAME} --member="serviceAccount:${SA_EMAIL}" --role="roles/run.invoker" --region=${REGION}
 
@@ -331,8 +348,6 @@ gcloud run services add-iam-policy-binding ${SERVICE_NAME} --member="serviceAcco
 
 ```
 以上でCloudGaugeの準備が整いました。URLにお進みいただければアプリケーションを利用開始できる状態となっています。
-
-With these permissions set, your CloudGauge instance is fully deployed and ready to use. You can now proceed to the application's URL to start your first scan.
 
 ---
 
